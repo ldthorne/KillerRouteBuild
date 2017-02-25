@@ -61,6 +61,11 @@ var Form = (function () {
 
 $(document).ready(function () {
     $('#sidebar').find('form').each(function () {
-        new Form($(this));
+        var form = new Form($(this));
+        var destination = $(this).find("#destination")[0];
+        var startingPoint = $(this).find("#starting-point")[0];
+        var options = { types: ["address"], strictBounds: true, bounds: new google.maps.LatLngBounds(new google.maps.LatLng(40.496020, -74.256508), new google.maps.LatLng(40.854265, -73.668605)) };
+        new google.maps.places.Autocomplete(destination, options);
+        new google.maps.places.Autocomplete(startingPoint, options);
     });
 });
