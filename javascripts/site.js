@@ -113,7 +113,7 @@ var Form = (function () {
                 return angleDeg >= 20;
             });
 
-            if (closebyCrimes.length > 3) {
+            if (closebyCrimes.length > 5) {
                 console.log('lotta crims heres');
                 closebyCrimes = closebyCrimes.slice(0, 3);
             }
