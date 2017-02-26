@@ -9,6 +9,7 @@ var Form = (function () {
         _classCallCheck(this, Form);
 
         this.$form = $form;
+        this.$map = $('#map');
         this.attachHandler();
     }
 
@@ -24,6 +25,8 @@ var Form = (function () {
     }, {
         key: "submitForm",
         value: function submitForm() {
+            var _this = this;
+
             var locations = {
                 destination: this.$form.find("#destination").val(),
                 startingPoint: this.$form.find("#starting-point").val()
@@ -36,22 +39,84 @@ var Form = (function () {
                 method: 'POST',
                 data: JSON.stringify(locations),
                 dataType: 'json'
-            }).done(this.calculateCoords).fail(function (err) {
+            }).done(function (response) {
+                _this.calculateCoords(response);
+            }).fail(function (err) {
                 console.error(err);
             });
         }
     }, {
         key: "calculateCoords",
         value: function calculateCoords(response) {
+            var _this2 = this;
+
             console.log(response);
+            this.startingCoords = response.startingCoords;
+            this.destinationCoords = response.destinationCoords;
             var points = [{ lat: response.destinationCoords.lat, lng: response.startingCoords.lng }, { lat: response.startingCoords.lat, lng: response.destinationCoords.lng }, response.startingCoords, response.destinationCoords];
+            $.ajax({
+                url: 'http://62.220.148.175:5000/crime/api',
+                method: 'POST',
+                data: JSON.stringify(points),
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json'
+            }).then(function (crimes) {
+                console.log(crimes);
+                _this2.findRelevantCrimes(crimes);
+            })["catch"](function (err) {
+                console.error(err);
+            });
             // $.get()
         }
     }, {
         key: "findRelevantCrimes",
         value: function findRelevantCrimes(crimes) {
-            var map = crimes.map(function (elem) {
-                // return
+            var _this3 = this;
+
+            crimes = crimes.points.map(function (elem) {
+                return {
+                    lat: elem[0],
+                    lng: elem[1]
+                };
+            });
+            var closebyCrimes = crimes.filter(function (elem) {
+                var angleDeg = Math.atan2(elem.lat - _this3.startingCoords.lat, elem.lng - _this3.startingCoords.lng) * 180 / Math.PI;
+                return angleDeg >= 20;
+            });
+
+            if (closebyCrimes.length > 3) {
+                console.log('lotta crims heres');
+                closebyCrimes = closebyCrimes.slice(0, 3);
+            }
+            this.getDirections(closebyCrimes);
+        }
+    }, {
+        key: "getDirections",
+        value: function getDirections(crimes) {
+            var origin = "origin=" + this.startingCoords.lat + "%2C" + this.startingCoords.lng;
+            var destination = "destination=" + this.destinationCoords.lat + "%2C" + this.destinationCoords.lng;
+            var directionsService = new google.maps.DirectionsService();
+            var directionsDisplay = new google.maps.DirectionsRenderer({
+                suppressMarkers: true
+            });
+            directionsDisplay.setMap(window.map);
+            var waypoints = crimes.map(function (crime) {
+                return {
+                    location: crime,
+                    stopover: true
+                };
+            });
+
+            console.log(waypoints.length);
+            directionsService.route({
+                origin: this.startingCoords,
+                destination: this.destinationCoords,
+                waypoints: waypoints,
+                optimizeWaypoints: true,
+                travelMode: 'DRIVING'
+            }, function (res, status) {
+                console.log(res, status);
+                directionsDisplay.setDirections(res);
             });
         }
     }]);

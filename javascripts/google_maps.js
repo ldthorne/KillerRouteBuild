@@ -8,11 +8,11 @@ var initMap = function initMap() {
   };
   var mapOpts = {
     center: balticCoords,
-    scrollwheel: false,
     mapTypeControl: false,
     zoom: 15
   };
   var map = new google.maps.Map(mapElement, mapOpts);
+  window.map = map;
   getLocation(map);
 };
 
